@@ -170,3 +170,6 @@ certs/key.pem
 test.py
 session_name.session
 md/tele.md
+md/file_overview.md.resolved
+md/setup_and_deployment.md.resolved
+
