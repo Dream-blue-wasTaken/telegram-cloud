@@ -123,6 +123,8 @@ celerybeat.pid
 .env
 .venv
 env/
+.env.local
+.env.example
 venv/
 ENV/
 env.bak/
@@ -167,3 +169,4 @@ certs/key.pem
 ./Downloads/**
 test.py
 session_name.session
+md/tele.md

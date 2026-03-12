@@ -1,0 +1,56 @@
+# Telegram Cloud: Project Files Overview
+
+This document provides a detailed explanation of each file in the `telegram-cloud` project and an assessment of whether the codebase is up to date.
+
+## 📂 Core Logic & Backend
+
+| File | Description |
+| :--- | :--- |
+| [bot.py](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/bot.py) | The main entry point for the Web application (Flask). It handles user authentication, routing, and coordinates file operations using the [BotActions](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/core.py#21-256) class. |
+| [core.py](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/core.py) | Contains the core logic of the application. It includes [BotActions](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/core.py#21-256) for Telegram API interactions, [SchemaManipulations](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/core.py#258-405) for managing the virtual file system, and [EncDecHelper](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/core.py#407-431) for file encryption/decryption. |
+| [utils/functions.py](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/utils/functions.py) | Contains utility functions, notably [manage_file_shares](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/utils/functions.py#7-26), which runs in a background thread to enforce expiry limits on shared files. |
+| [backupper.py](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/backupper.py) | A CLI tool built with `click` for bulk uploading local directories to Telegram and bulk downloading folders from Telegram back to local storage. |
+| [exp.py](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/exp.py) | An experimental script using the `Telethon` library. It appears to be a draft for bypassing the 50MB Bot API limit by using the MTProto API (Telegram User API). |
+
+## 🌐 Web Interface (templates/ & static/)
+
+- **`templates/`**: Contains Jinja2 HTML templates for the Flask app.
+    - [index.html](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/templates/index.html): The main dashboard for browsing files and folders.
+    - [login.html](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/templates/login.html): Simple login page.
+    - [navbar.html](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/templates/navbar.html): Reusable navigation bar.
+    - [bulk-upload.html](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/templates/bulk-upload.html): Interface for bulk operations.
+    - [flash.html](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/templates/flash.html): Handles alert messages (success/error).
+    - [recovery.html](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/templates/recovery.html): Interface for schema recovery.
+    - [error.html](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/templates/error.html): Generic error display page.
+- **`static/`**: Contains CSS, JavaScript, and icons used for styling the web interface.
+
+## ⚙️ Configuration & Deployment
+
+| File | Description |
+| :--- | :--- |
+| [requirements.txt](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/requirements.txt) | Lists Python dependencies (Flask, python-telegram-bot, etc.). |
+| [Dockerfile](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/Dockerfile) | Defines the container image for the application. |
+| [docker-compose.yml](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/docker-compose.yml) | Configures the containerized service, including volume persistence for the schema. |
+| [run.sh](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/run.sh) | A shell script to generate SSL certificates and start the Flask application. |
+| `.env` | (Not committed) Stores sensitive API keys and configuration variables. |
+| [.gitignore](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/.gitignore) | Specifies files ignored by Git (logs, credentials, local downloads). |
+
+---
+
+## 📅 Is it "Up to Date"?
+
+Based on my analysis, the repository is **mostly functional but has some maintenance debt**:
+
+1.  **Dependency Versioning**:
+    - The [requirements.txt](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/requirements.txt) specifies `python-telegram-bot==13.2`. This is an older version. The library is currently at version **21.x** and has transitioned to a fully asynchronous model (`asyncio`). Upgrading would require a significant refactor of [core.py](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/core.py) and [bot.py](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/bot.py).
+2.  **Incomplete Dockerfile**:
+    - The [Dockerfile](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/Dockerfile) is missing `COPY` commands for the `utils/` and `static/` directories. Since [bot.py](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/bot.py) imports from `utils/` and the templates rely on `static/` for CSS, the app **will fail to run correctly** inside a Docker container in its current state.
+3.  **Experimental Files**:
+    - [exp.py](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/exp.py) uses a different library (`Telethon`) and hardcoded credentials. It serves as a proof-of-concept for larger file support but isn't integrated into the main application.
+4.  **Schema Persistence**:
+    - The reliance on `schema.json` is a bit fragile. The code handles it well, but the README notes that if this file is lost, the link to all stored files on Telegram is also lost (hence the "Persist/Recover" feature).
+
+### Recommendations
+- **Fix Dockerfile**: Add `COPY static /svc/static` and `COPY utils /svc/utils` to ensure the container works.
+- **Refactor for v20+**: If security or longevity is a priority, refactoring the Telegram interactions to use `asyncio` with the latest `python-telegram-bot` version is highly recommended.
+- **Clean up [exp.py](file:///c:/Users/KIIT0001/Documents/projects/telegram-cloud/exp.py)**: Either integrate the large-file support or move it to a `research/` folder to avoid confusion.
